@@ -4,7 +4,7 @@ A high-performance shop search service utilizing vector embeddings for semantic 
 
 ### Technologies
 - **Kotlin & Spring Boot (WebFlux)**: Reactive backend architecture.
-- **jOOQ**: Type-safe SQL querying for H2 and ClickHouse.
+- **Spring JDBC (NamedParameterJdbcTemplate)**: Efficient and flexible SQL querying for H2 and ClickHouse.
 - **ClickHouse**: Used as a vector database for fast nearest neighbor search using `cosineDistance`.
 - **H2 (MySQL Mode)**: Primary database for relational data (Merchants, Categories, Shops).
 - **Flyway**: Database migration management.

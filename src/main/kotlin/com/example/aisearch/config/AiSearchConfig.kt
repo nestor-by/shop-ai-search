@@ -8,15 +8,13 @@ import com.example.aisearch.service.AiEmbeddingService
 import com.example.aisearch.service.HuggingfaceAiEmbeddingService
 import com.example.aisearch.service.ShopSearchService
 import com.zaxxer.hikari.HikariDataSource
-import org.jooq.DSLContext
-import org.jooq.SQLDialect
-import org.jooq.impl.DSL
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import javax.sql.DataSource
 
 @Configuration
@@ -37,25 +35,25 @@ class AiSearchConfig {
 
   @Bean
   @Primary
-  @Qualifier("dslContext")
-  fun dslContext(@Qualifier("dataSource") dataSource: DataSource): DSLContext {
-    return DSL.using(dataSource, SQLDialect.H2)
+  @Qualifier("mysqlJdbcTemplate")
+  fun mysqlJdbcTemplate(@Qualifier("dataSource") dataSource: DataSource): NamedParameterJdbcTemplate {
+    return NamedParameterJdbcTemplate(dataSource)
   }
 
   @Bean
-  @Qualifier("clickhouseDslContext")
-  fun clickhouseDslContext(@Qualifier("clickhouseDataSource") dataSource: DataSource): DSLContext {
-    return DSL.using(dataSource, SQLDialect.CLICKHOUSE)
+  @Qualifier("clickhouseJdbcTemplate")
+  fun clickhouseJdbcTemplate(@Qualifier("clickhouseDataSource") dataSource: DataSource): NamedParameterJdbcTemplate {
+    return NamedParameterJdbcTemplate(dataSource)
   }
 
   @Bean
-  fun merchantRepository(@Qualifier("dslContext") dslContext: DSLContext): MerchantRepository {
-    return MerchantRepository(dslContext)
+  fun merchantRepository(@Qualifier("mysqlJdbcTemplate") jdbcTemplate: NamedParameterJdbcTemplate): MerchantRepository {
+    return MerchantRepository(jdbcTemplate)
   }
 
   @Bean
-  fun shopSearchRepository(@Qualifier("clickhouseDslContext") dslContext: DSLContext): ShopSearchRepository {
-    return ShopSearchRepository(dslContext)
+  fun shopSearchRepository(@Qualifier("clickhouseJdbcTemplate") jdbcTemplate: NamedParameterJdbcTemplate): ShopSearchRepository {
+    return ShopSearchRepository(jdbcTemplate)
   }
 
   @Bean
@@ -79,10 +77,10 @@ class AiSearchConfig {
 
   @Bean
   fun dataInitializer(
-    @Qualifier("dslContext") dslContext: DSLContext,
-    @Qualifier("clickhouseDslContext") clickhouseDslContext: DSLContext,
+    @Qualifier("mysqlJdbcTemplate") jdbcTemplate: NamedParameterJdbcTemplate,
+    @Qualifier("clickhouseJdbcTemplate") clickhouseJdbcTemplate: NamedParameterJdbcTemplate,
     embeddingService: AiEmbeddingService
   ): DataInitializer {
-    return DataInitializer(dslContext, clickhouseDslContext, embeddingService)
+    return DataInitializer(jdbcTemplate, clickhouseJdbcTemplate, embeddingService)
   }
 }

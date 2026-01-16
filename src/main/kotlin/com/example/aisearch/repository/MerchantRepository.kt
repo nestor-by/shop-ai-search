@@ -1,26 +1,26 @@
 package com.example.aisearch.repository
 
-import com.example.aisearch.jooq.tables.references.MERCHANT
 import com.example.aisearch.model.MerchantInfo
-import org.jooq.DSLContext
-import reactor.core.publisher.Flux
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 
-class MerchantRepository(private val dslContext: DSLContext) {
+class MerchantRepository(private val jdbcTemplate: NamedParameterJdbcTemplate) {
 
   fun findByIds(ids: List<Long>): Mono<Map<Long, MerchantInfo>> {
-    val query = dslContext.selectFrom(MERCHANT)
-      .where(MERCHANT.ID.`in`(ids))
+    if (ids.isEmpty()) return Mono.just(emptyMap())
 
-    return Flux.from(query)
-      .map {
+    return Mono.fromCallable {
+      val sql = "SELECT id, name, description_eng FROM merchant WHERE id IN (:ids)"
+      val params = mapOf("ids" to ids)
+
+      jdbcTemplate.query(sql, params) { rs, _ ->
         MerchantInfo(
-          id = it.id!!,
-          name = it.name!!,
-          descriptionEng = it.descriptionEng
+          id = rs.getLong("id"),
+          name = rs.getString("name"),
+          descriptionEng = rs.getString("description_eng")
         )
-      }
-      .collectList()
-      .map { list -> list.associateBy { it.id } }
+      }.associateBy { it.id }
+    }.subscribeOn(Schedulers.boundedElastic())
   }
 }
